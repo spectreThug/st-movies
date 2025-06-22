@@ -1,24 +1,24 @@
-const { validationResult, body, param } = require("express-validator");
+const { validationResult, body, param, query } = require("express-validator");
 
 module.exports = {
   validate: (method) => {
     switch (method) {
       case "search": {
-        return [body("movieName", "movieName is required").exists()];
+        return [query("movieName", "movieName is required").exists()];
       }
 
       case "details": {
         return [
-          body("movieId", "movieId is required").exists(),
-          body("movieName", "movieName is required").exists(),
-          body("fullMovieName", "fullMovieName is required").exists(),
+          param("movieId", "movieId is required").exists(),
+          param("movieName", "movieName is required").exists(),
+          param("fullMovieName", "fullMovieName is required").exists(),
         ];
       }
 
       case "stream": {
         return [
-          body("year", "year is required").exists(),
-          body("movieName", "movieName is required").exists(),
+          param("year", "year is required").exists(),
+          param("movieName", "movieName is required").exists(),
         ];
       }
     }
