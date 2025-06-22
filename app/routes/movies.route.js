@@ -9,21 +9,21 @@ const {
 
 const MoviesControllers = require("../controllers/movies.controller");
 
-router.post(
+router.get(
   "/search",
   validate("search"),
   checkErrors,
   MoviesControllers.search
 );
 
-router.post(
+router.get(
   "/details",
   validate("details"),
   checkErrors,
   MoviesControllers.details
 );
 
-router.post(
+router.get(
   "/stream",
   validate("stream"),
   checkErrors,
