@@ -4,7 +4,7 @@ module.exports = {
   validate: (method) => {
     switch (method) {
       case "search": {
-        return [query("movieName", "movieName is required").exists()];
+        return [param("movieName", "movieName is required").exists()];
       }
 
       case "details": {
