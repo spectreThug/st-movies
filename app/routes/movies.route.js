@@ -10,21 +10,21 @@ const {
 const MoviesControllers = require("../controllers/movies.controller");
 
 router.get(
-  "/search",
+  "/search/:movieName",
   validate("search"),
   checkErrors,
   MoviesControllers.search
 );
 
 router.get(
-  "/details",
+  "/details/:movieId/:movieName/:fullMovieName",
   validate("details"),
   checkErrors,
   MoviesControllers.details
 );
 
 router.get(
-  "/stream",
+  "/stream/:movieName/:year",
   validate("stream"),
   checkErrors,
   MoviesControllers.stream
