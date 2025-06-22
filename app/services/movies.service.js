@@ -26,7 +26,7 @@ exports.searchMovie = async (movieName) => {
         id,
         name: $(movieImgs[i]).attr("alt"),
         year: year.split(", ")[1],
-        image: img.split("org")[1],
+        image: img.split(`${baseURL}`)[1],
         overview,
       });
     }
