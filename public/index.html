@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Spectre Movies — Ultimate Stream & Discover Platform</title>
+  <meta name="description" content="Discover movies, watch trailers, and access direct download streams with ease. Powered by TMDB and YTS.">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="https://media.themoviedb.org/t/p/w92/AtsgWhDnHTq68L0lLsUrCnM7TjG.jpg">
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header>
+      <div class="header-content">
+        <a href="/" class="logo" id="app-logo">
+          <i class="fa-solid fa-film"></i>
+          <span>SpectreMovies</span>
+        </a>
+        <div class="search-container">
+          <input type="text" id="search-input" class="search-bar" placeholder="Search for movies..." autocomplete="off">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Hero Spotlight Section -->
+    <section class="hero" id="hero-section">
+      <div class="hero-banner" id="hero-banner">
+        <div class="hero-content">
+          <span class="hero-tag">Spotlight</span>
+          <h1 class="hero-title" id="hero-title">Captain Marvel</h1>
+          <p class="hero-desc" id="hero-desc">
+            The story follows Carol Danvers as she becomes one of the universe’s most powerful heroes when Earth is caught in the middle of a galactic war between two alien races.
+          </p>
+          <button class="hero-btn" id="hero-play-btn" data-id="299537" data-name="Captain Marvel">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>View Details</span>
+          </button>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Main Content Grid -->
+    <main>
+      <div class="section-header">
+        <h2 class="section-title" id="grid-title">Popular Results</h2>
+      </div>
+      
+      <div class="movie-grid" id="movie-grid">
+        <!-- Rendered movie cards will appear here -->
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer>
+      <p>&copy; 2026 SpectreMovies. Powered by <a href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a> and <a href="https://yts.mx/" target="_blank" rel="noopener">YTS</a>. Made for personal use.</p>
+    </footer>
+    
+  </div>
+
+  <!-- Movie Details Modal Overlay -->
+  <div class="modal-overlay" id="details-modal">
+    <div class="modal-container">
+      
+      <button class="modal-close-btn" id="modal-close-btn" aria-label="Close modal">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      
+      <!-- Backdrop image banner -->
+      <div class="modal-backdrop-banner" id="modal-backdrop"></div>
+      
+      <div class="modal-body">
+        <div class="modal-main-row">
+          
+          <!-- Left column: Poster -->
+          <div class="modal-poster-col">
+            <img src="" alt="Movie Poster" class="modal-poster" id="modal-poster">
+          </div>
+          
+          <!-- Right column: Movie Info -->
+          <div class="modal-info-col">
+            <h2 class="modal-title" id="modal-title">Movie Title</h2>
+            <div class="modal-tagline" id="modal-tagline">"Tagline goes here..."</div>
+            
+            <div class="modal-meta-row">
+              <span class="meta-pill" id="modal-year">2026</span>
+              <span class="meta-pill" id="modal-certification">PG-13</span>
+              <span class="meta-pill" id="modal-runtime"><i class="fa-regular fa-clock"></i> 2h 4m</span>
+              
+              <!-- Rating Circle -->
+              <div class="rating-circle-container">
+                <div class="rating-circle" id="modal-rating">78%</div>
+                <span style="font-weight: 500; font-size: 0.8rem;">User Score</span>
+              </div>
+            </div>
+            
+            <div class="meta-genres" id="modal-genres">
+              <!-- Genre badges -->
+            </div>
+          </div>
+          
+        </div>
+        
+        <!-- Section: Overview -->
+        <div class="detail-section">
+          <h3 class="detail-section-title">Overview</h3>
+          <p class="modal-overview-text" id="modal-overview">
+            Overview description text...
+          </p>
+        </div>
+        
+        <!-- Section: Cast list -->
+        <div class="detail-section">
+          <h3 class="detail-section-title">Casting</h3>
+          <div class="cast-scroller-container">
+            <div class="cast-scroller" id="modal-cast">
+              <!-- Cast circular cards -->
+            </div>
+          </div>
+        </div>
+        
+        <!-- Section: Trailer -->
+        <div class="detail-section" id="modal-trailer-section">
+          <h3 class="detail-section-title">Official Trailer</h3>
+          <div class="video-wrapper">
+            <iframe id="modal-trailer-iframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+          </div>
+        </div>
+        
+        <!-- Section: Torrent Streams & Downloads -->
+        <div class="detail-section">
+          <h3 class="detail-section-title">Direct Torrent Downloads</h3>
+          <div class="stream-grid" id="modal-streams">
+            <!-- Available streams -->
+          </div>
+        </div>
+        
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- Main JavaScript File -->
+  <script src="app.js"></script>
+</body>
+</html>
