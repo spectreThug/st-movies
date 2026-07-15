@@ -1,8 +1,12 @@
 {
-"version":2,
-"builds":[{"src":"main.js", "use":"@vercel/node"}],
-"routes":[{
-"src":"/(.*)",
-"dest": "main.js"
-}]
+  "version": 2,
+  "builds": [
+    { "src": "main.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "main.js" },
+    { "src": "/styles.css", "dest": "/public/styles.css" },
+    { "src": "/app.js", "dest": "/public/app.js" },
+    { "src": "/(.*)", "dest": "/public/index.html" }
+  ]
 }
