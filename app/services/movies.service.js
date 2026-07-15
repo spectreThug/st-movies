@@ -8,25 +8,42 @@ exports.searchMovie = async (movieName) => {
   try {
     let res = await axios.get(baseURL + encodeURI(searchParams));
     const $ = cheerio.load(res.data);
-    let movieImgs = $(".poster img");
-    let movieYears = $(".release_date");
-    let movieOverview = $(".overview p");
-    let movieIds = $(".title a");
-    for (let i = 0; i < movieImgs.length; i++) {
-      let img = `${baseURL}${$(movieImgs[i])
-        .attr("src")
-        .replace("w92", "w600")}`;
-      img = img.replace("/w94_and_h141_", "/w600_and_h900_");
-      let year = movieYears.length >= i ? $(movieYears[i]).text() : "2000";
-      let overview =
-        movieOverview.length >= i ? $(movieOverview[i]).text() : "";
-      let id =
-        movieIds.length >= i ? $(movieIds[i]).attr("href").split("/")[2] : "";
+    const cards = $("[class*='comp:media-card']");
+    for (let i = 0; i < cards.length; i++) {
+      const card = $(cards[i]);
+      const imgEl = card.find("img.poster");
+      const name = imgEl.attr("alt") || card.find("h2 span").text().trim();
+      const rawSrc = imgEl.attr("src") || "";
+      
+      let img = rawSrc;
+      if (img) {
+        img = img.replace("w94_and_h141_face", "w600_and_h900_bestv2");
+      }
+      
+      const releaseDateText = card.find(".release_date").text().trim();
+      const yearMatch = releaseDateText.match(/\d{4}/);
+      const year = yearMatch ? yearMatch[0] : "2000";
+      
+      const overview = card.find("p").text().trim();
+      
+      const href = card.find("a").first().attr("href") || "";
+      const idMatch = href.match(/\/movie\/(\d+)/);
+      const id = idMatch ? idMatch[1] : "";
+      
+      let imagePath = "";
+      if (img) {
+        try {
+          imagePath = new URL(img).pathname;
+        } catch (e) {
+          imagePath = img.replace(/^https?:\/\/[^\/]+/, "");
+        }
+      }
+
       movies.push({
         id,
-        name: $(movieImgs[i]).attr("alt"),
-        year: year.split(", ")[1],
-        image: img.split(`${baseURL}`)[1],
+        name,
+        year,
+        image: imagePath,
         overview,
       });
     }
@@ -42,46 +59,80 @@ exports.getMovieDetails = async (movieID, movieName, fullMovieName) => {
   try {
     let res = await axios.get(baseURL + encodeURI(searchParams));
     const $ = cheerio.load(res.data);
-    const filteredUrls = res.data.split("background-image: url('")[1];
-    const bcImage = filteredUrls.split("');")[0];
-    let movieImage = $(".image_content img").attr("src");
-    movieImage = movieImage.replace("bestv2_filter(blur)", "bestv2");
+    
+    let bcImage = "";
+    const bgMatch = res.data.match(/background-image:\s*url\(['"]?([^'")]*)['"]?\)/);
+    if (bgMatch) {
+      bcImage = bgMatch[1];
+    }
+    if (bcImage && !bcImage.startsWith("http")) {
+      bcImage = baseURL + bcImage;
+    }
+    
+    let movieImage = $(".image_content img").attr("src") || "";
+    if (movieImage) {
+      movieImage = movieImage.replace("bestv2_filter(blur)", "bestv2");
+      if (!movieImage.startsWith("http")) {
+        movieImage = baseURL + movieImage;
+      }
+    }
+    
     const release_date = $(".release").text().trim();
     const categoryHTML = $(".genres a");
     const movieLength = $(".runtime").text().trim();
     const rateHTML = $(".percent span");
     const certification = $(".certification").text().trim();
-    const rate = parseInt(
-      rateHTML.toArray()[0].attribs["class"].split("-r")[1]
-    );
+    
+    let rate = 0;
+    if (rateHTML.length > 0) {
+      const rateClass = rateHTML.toArray()[0].attribs["class"];
+      if (rateClass && rateClass.includes("-r")) {
+        rate = parseInt(rateClass.split("-r")[1]);
+      }
+    }
+    
     const quote = $(".tagline").text().trim();
     let categories = [];
     for (let i = 0; i < categoryHTML.length; i++) {
       categories.push($(categoryHTML[i]).text());
     }
-    const tralier =
-      "https://youtu.be/" + res.data.split("/video/play?key=")[1].split('"')[0];
+    
+    let tralier = "";
+    const trailerMatch = res.data.match(/\/video\/play\?key=([^"]+)/);
+    if (trailerMatch) {
+      tralier = "https://youtu.be/" + trailerMatch[1];
+    }
+    
     const overview = $(".overview p").text().trim();
     const castHTML = $("#cast_scroller ol li");
     let cast = [];
     for (let t = 0; t < castHTML.length; t++) {
-      cast.push({
-        actorName: $(castHTML[t]).find("p").find("a").text().trim(),
-        actorImage: baseURL + $(castHTML[t]).find("p").find("a").attr("href"),
-        character: $(castHTML[t])
-          .find("p")
-          .text()
-          .trim()
-          .split($(castHTML[t]).find("p").find("a").text().trim())[1],
-      });
+      const actorName = $(castHTML[t]).find("p").find("a").text().trim();
+      const actorHref = $(castHTML[t]).find("p").find("a").attr("href");
+      if (actorName) {
+        let actorImage = "";
+        if (actorHref) {
+          actorImage = actorHref.startsWith("http") ? actorHref : (baseURL + actorHref);
+        }
+        const text = $(castHTML[t]).find("p").text().trim();
+        const character = text.split(actorName)[1] ? text.split(actorName)[1].trim() : "";
+        cast.push({
+          actorName,
+          actorImage,
+          character,
+        });
+      }
     }
-    cast.pop();
+    if (cast.length > 0) {
+      cast.pop();
+    }
+    
     return {
       success: true,
       data: {
         id: movieID,
         name: fullMovieName,
-        image: baseURL + movieImage,
+        image: movieImage,
         certification,
         release_date,
         categories,
@@ -90,7 +141,7 @@ exports.getMovieDetails = async (movieID, movieName, fullMovieName) => {
         quote,
         overview,
         trailer: tralier,
-        backgroundImage: baseURL + bcImage,
+        backgroundImage: bcImage,
         cast,
       },
     };
