@@ -154,46 +154,50 @@ exports.getMovieDetails = async (movieID, movieName, fullMovieName) => {
   }
 };
 exports.getMovieStreamLink = async (movieName, year) => {
-  const baseURL = "https://yts.mx/movies/";
-  const finalURL =
-    baseURL + movieName.toLowerCase().split(" ").join("-") + `-${year}`;
-  try {
-    let res = await axios.get(finalURL);
-    let allLinks = res.data.match(/<a href="(.*?)">/g);
-    const torrentLinks = allLinks.filter((link) => {
-      return link.includes("torrent");
-    });
+  const domains = [
+    "https://yts.mx",
+    "https://yts.lt",
+    "https://yts.pm",
+    "https://yts.rs",
+    "https://yts.gg",
+    "https://yts.ae",
+    "https://yts.ph"
+  ];
 
-    let torrents = torrentLinks.slice(torrentLinks.length / 2);
-
-    for (let i = 0; i < torrents.length; i++) {
-      let quality = "";
-      if (torrents[i].includes("144p")) {
-        quality = "144p";
-      } else if (torrents[i].includes("240p")) {
-        quality = "240p";
-      } else if (torrents[i].includes("360p")) {
-        quality = "360p";
-      } else if (torrents[i].includes("480p")) {
-        quality = "480p";
-      } else if (torrents[i].includes("720p")) {
-        quality = "720p";
-      } else if (torrents[i].includes("1080p")) {
-        quality = "1080p";
-      } else if (torrents[i].includes("2160p")) {
-        quality = "2160p";
-      } else if (torrents[i].includes("4k")) {
-        quality = "4k";
+  let lastError = null;
+  for (const domain of domains) {
+    const apiUrl = `${domain}/api/v2/list_movies.json?query_term=${encodeURIComponent(movieName)}`;
+    try {
+      let res = await axios.get(apiUrl, { timeout: 5000 });
+      if (res.data && res.data.status === "ok" && res.data.data && res.data.data.movies) {
+        const movies = res.data.data.movies;
+        let movie = movies.find(m => m.year === parseInt(year));
+        if (!movie) {
+          movie = movies[0];
+        }
+        
+        if (movie && movie.torrents) {
+          const torrents = movie.torrents.map(t => {
+            let downloadUrl = t.url;
+            try {
+              const urlObj = new URL(downloadUrl);
+              urlObj.host = new URL(domain).host;
+              downloadUrl = urlObj.toString();
+            } catch (e) {}
+            
+            return {
+              quality: t.quality,
+              url: downloadUrl
+            };
+          });
+          return { success: true, data: torrents };
+        }
       }
-      torrents[i] = {
-        quality,
-        url: torrents[i].split('"')[1],
-      };
+    } catch (error) {
+      lastError = error;
     }
-    return { success: true, data: torrents };
-  } catch (error) {
-    return { success: false, data: [], msg: error.message };
   }
+  return { success: false, data: [], msg: lastError ? lastError.message : "No streaming links found" };
 };
 
 exports.trendingMovies = async () => {
