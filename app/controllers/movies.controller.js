@@ -36,3 +36,19 @@ exports.stream = async (req, res) => {
 
   res.json(movieStreamData);
 };
+
+exports.popular = async (req, res) => {
+  const popularMoviesData = await MoviesService.popularMovies();
+  if (popularMoviesData.success == false)
+    return res.status(400).json(popularMoviesData);
+
+  res.json(popularMoviesData);
+};
+
+exports.trending = async (req, res) => {
+  const trendingMoviesData = await MoviesService.trendingMovies();
+  if (trendingMoviesData.success == false)
+    return res.status(400).json(trendingMoviesData);
+
+  res.json(trendingMoviesData);
+};

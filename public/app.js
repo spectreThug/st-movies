@@ -9,6 +9,8 @@ const TMDB_IMAGE_BASE = 'https://media.themoviedb.org';
 const searchInput = document.getElementById('search-input');
 const movieGrid = document.getElementById('movie-grid');
 const gridTitle = document.getElementById('grid-title');
+const trendingSection = document.getElementById('trending-section');
+const trendingGrid = document.getElementById('trending-grid');
 const heroSection = document.getElementById('hero-section');
 const heroBanner = document.getElementById('hero-banner');
 const heroTitle = document.getElementById('hero-title');
@@ -38,8 +40,8 @@ let searchDebounceTimeout = null;
 
 // --- Initialize App ---
 document.addEventListener('DOMContentLoaded', () => {
-  // Load default spotlight movie "Captain Marvel"
-  fetchSpotlightMovie();
+  // Load default popular and trending movies
+  fetchInitialData();
   
   // Set up search listener
   searchInput.addEventListener('input', handleSearchInput);
@@ -67,34 +69,77 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// --- Fetch Spotlight Movie on Load ---
-async function fetchSpotlightMovie() {
+// --- Fetch Initial Data (Popular & Trending) ---
+async function fetchInitialData() {
+  trendingSection.style.display = 'block';
+  renderShimmers(trendingGrid, 6);
+  renderShimmers(movieGrid, 8);
+  
+  fetchPopularMovies();
+  fetchTrendingMovies();
+}
+
+// --- Fetch Popular Movies ---
+async function fetchPopularMovies() {
   try {
-    const response = await fetch(`${API_BASE}/api/movies/search/Captain%20Marvel`);
+    const response = await fetch(`${API_BASE}/api/movies/popular`);
     const result = await response.json();
     
     if (result.success && result.data.length > 0) {
-      renderMovieGrid(result.data);
+      renderMovieGrid(result.data, movieGrid);
+    } else {
+      renderError("No popular movies found.", movieGrid);
+    }
+  } catch (error) {
+    console.error("Error loading popular movies:", error);
+    renderError("Failed to connect to movie server.", movieGrid);
+  }
+}
+
+// --- Fetch Trending Movies ---
+async function fetchTrendingMovies() {
+  try {
+    const response = await fetch(`${API_BASE}/api/movies/trending`);
+    const result = await response.json();
+    
+    if (result.success && result.data.length > 0) {
+      renderMovieGrid(result.data, trendingGrid);
       
-      // Update Hero Section with the top movie
+      // Update Hero Section with the top trending movie
       const movie = result.data[0];
       heroTitle.textContent = movie.name;
-      heroDesc.textContent = movie.overview;
+      heroDesc.textContent = "Loading description...";
       heroPlayBtn.setAttribute('data-id', movie.id);
       heroPlayBtn.setAttribute('data-name', movie.name);
       
-      // Set backdrop
-      if (movie.image) {
-        // Form a full size backdrop if available
-        const bgUrl = `${TMDB_IMAGE_BASE}${movie.image}`;
-        heroBanner.style.background = `linear-gradient(to right, rgba(11, 15, 25, 0.95), rgba(11, 15, 25, 0.3)), url('${bgUrl}') center/cover no-repeat`;
-      }
+      // Fetch this specific movie's details to get high-res backdrop & overview
+      fetchHeroSpotlightDetails(movie.id, movie.name);
     } else {
-      renderError("No movies found.");
+      renderError("No trending movies found.", trendingGrid);
     }
   } catch (error) {
-    console.error("Error loading initial data:", error);
-    renderError("Failed to connect to movie server.");
+    console.error("Error loading trending movies:", error);
+    renderError("Failed to load trending movies.", trendingGrid);
+  }
+}
+
+// --- Fetch Hero Spotlight Details (Backdrop & Overview) ---
+async function fetchHeroSpotlightDetails(movieId, movieName) {
+  try {
+    const cleanMovieName = movieName.replace(/[:]/g, ''); // strip colons
+    const response = await fetch(`${API_BASE}/api/movies/details/${movieId}/${encodeURIComponent(cleanMovieName)}/${encodeURIComponent(movieName)}`);
+    const result = await response.json();
+    if (result.success && result.data) {
+      const details = result.data;
+      if (details.overview) {
+        heroDesc.textContent = details.overview;
+      }
+      if (details.backgroundImage) {
+        heroBanner.style.background = `linear-gradient(to right, rgba(11, 15, 25, 0.95), rgba(11, 15, 25, 0.3)), url('${details.backgroundImage}') center/cover no-repeat`;
+      }
+    }
+  } catch (e) {
+    console.error("Failed to load hero spotlight details:", e);
   }
 }
 
@@ -106,9 +151,12 @@ function handleSearchInput(e) {
   
   if (query.length === 0) {
     gridTitle.textContent = "Popular Results";
-    fetchSpotlightMovie();
+    fetchInitialData();
     return;
   }
+  
+  // Hide trending section when searching
+  trendingSection.style.display = 'none';
   
   // Wait 400ms after user stops typing before making request
   searchDebounceTimeout = setTimeout(() => {
@@ -136,8 +184,8 @@ async function searchMovies(query) {
 }
 
 // --- Render Movie Cards Grid ---
-function renderMovieGrid(movies) {
-  movieGrid.innerHTML = '';
+function renderMovieGrid(movies, targetElement = movieGrid) {
+  targetElement.innerHTML = '';
   
   movies.forEach(movie => {
     const card = document.createElement('div');
@@ -164,7 +212,7 @@ function renderMovieGrid(movies) {
       openMovieDetails(movie.id, movie.name);
     });
     
-    movieGrid.appendChild(card);
+    targetElement.appendChild(card);
   });
 }
 
@@ -373,9 +421,9 @@ function copyToClipboard(text, btnElement) {
 }
 
 // --- Render Loading Shimmers ---
-function renderShimmers() {
-  movieGrid.innerHTML = '';
-  for (let i = 0; i < 8; i++) {
+function renderShimmers(targetGrid = movieGrid, count = 8) {
+  targetGrid.innerHTML = '';
+  for (let i = 0; i < count; i++) {
     const card = document.createElement('div');
     card.className = 'movie-card shimmer-card';
     card.innerHTML = `
@@ -386,13 +434,13 @@ function renderShimmers() {
         <div class="shimmer-text shimmer" style="margin-top: 5px; width: 60%;"></div>
       </div>
     `;
-    movieGrid.appendChild(card);
+    targetGrid.appendChild(card);
   }
 }
 
 // --- Render Empty Search Result Message ---
-function renderEmpty(message) {
-  movieGrid.innerHTML = `
+function renderEmpty(message, targetGrid = movieGrid) {
+  targetGrid.innerHTML = `
     <div class="message-box">
       <i class="fa-solid fa-circle-question"></i>
       <h3>No Movies Found</h3>
@@ -402,8 +450,8 @@ function renderEmpty(message) {
 }
 
 // --- Render Server Error Message ---
-function renderError(message) {
-  movieGrid.innerHTML = `
+function renderError(message, targetGrid = movieGrid) {
+  targetGrid.innerHTML = `
     <div class="message-box">
       <i class="fa-solid fa-circle-exclamation"></i>
       <h3>Connection Failed</h3>

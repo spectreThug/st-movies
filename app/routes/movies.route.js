@@ -30,4 +30,14 @@ router.get(
   MoviesControllers.stream
 );
 
+router.get(
+  "/popular",
+  MoviesControllers.popular
+);
+
+router.get(
+  "/trending",
+  MoviesControllers.trending
+);
+
 module.exports = router;

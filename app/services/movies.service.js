@@ -200,13 +200,112 @@ exports.getMovieStreamLink = async (movieName, year) => {
   return { success: false, data: [], msg: lastError ? lastError.message : "No streaming links found" };
 };
 
-exports.trendingMovies = async () => {
+exports.popularMovies = async () => {
+  let movies = [];
   const baseURL = `https://www.themoviedb.org`;
-
+  const path = `/movie`;
   try {
-    let res = await axios.get(baseURL);
+    let res = await axios.get(baseURL + path, { timeout: 5000 });
     const $ = cheerio.load(res.data);
-    const fs = require("fs");
-    fs.writeFileSync("test.html", res.data);
-  } catch (error) {}
+    const cards = $("[class*='comp:poster-card']");
+    cards.each((i, el) => {
+      const card = $(el);
+      const imgEl = card.find("img.poster");
+      const name = card.find("h2").text().trim() || imgEl.attr("alt") || "";
+      const rawSrc = imgEl.attr("src") || "";
+      
+      let img = rawSrc;
+      if (img) {
+        img = img.replace("w220_and_h330_face", "w600_and_h900_bestv2");
+      }
+      
+      const releaseDateText = card.find("span.subheader").text().trim();
+      const yearMatch = releaseDateText.match(/\d{4}/);
+      const year = yearMatch ? yearMatch[0] : "2026";
+      
+      const href = card.find("a").first().attr("href") || "";
+      const idMatch = href.match(/\/movie\/(\d+)/);
+      const id = idMatch ? idMatch[1] : "";
+      
+      let imagePath = "";
+      if (img) {
+        try {
+          imagePath = new URL(img).pathname;
+        } catch (e) {
+          imagePath = img.replace(/^https?:\/\/[^\/]+/, "");
+        }
+      }
+
+      movies.push({
+        id,
+        name,
+        year,
+        image: imagePath,
+        overview: ""
+      });
+    });
+    return { success: true, data: movies };
+  } catch (error) {
+    return { success: false, data: [], msg: error.message };
+  }
+};
+
+exports.trendingMovies = async () => {
+  let movies = [];
+  const baseURL = `https://www.themoviedb.org`;
+  const url = `${baseURL}/remote/panel?panel=trending_scroller&group=today`;
+  try {
+    let res = await axios.get(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      timeout: 5000
+    });
+    const $ = cheerio.load(res.data);
+    const items = $("[class*='comp:poster-item']");
+    
+    items.each((i, el) => {
+      const item = $(el);
+      const href = item.find("a").first().attr("href") || "";
+      
+      if (href.startsWith("/movie/")) {
+        const imgEl = item.find("img.poster");
+        const name = item.find("h2").text().trim() || imgEl.attr("alt") || "";
+        const rawSrc = imgEl.attr("src") || "";
+        
+        let img = rawSrc;
+        if (img) {
+          img = img.replace("w220_and_h330_face", "w600_and_h900_bestv2");
+        }
+        
+        const releaseDateText = item.find("span.release_date").text().trim();
+        const yearMatch = releaseDateText.match(/\d{4}/);
+        const year = yearMatch ? yearMatch[0] : "2026";
+        
+        const idMatch = href.match(/\/movie\/(\d+)/);
+        const id = idMatch ? idMatch[1] : "";
+        
+        let imagePath = "";
+        if (img) {
+          try {
+            imagePath = new URL(img).pathname;
+          } catch (e) {
+            imagePath = img.replace(/^https?:\/\/[^\/]+/, "");
+          }
+        }
+
+        movies.push({
+          id,
+          name,
+          year,
+          image: imagePath,
+          overview: ""
+        });
+      }
+    });
+    
+    return { success: true, data: movies };
+  } catch (error) {
+    return { success: false, data: [], msg: error.message };
+  }
 };
